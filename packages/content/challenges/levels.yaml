@@ -1,0 +1,40 @@
+- slug: say-what-you-want
+  position: 1
+  code: '01'
+  name: Say what you want
+  blurb: 'Specify a programming or machine-learning objective, its inputs and its expected result.'
+  tip: 'Short is fine. Vague is not.'
+  accent: lime
+  unlock: { type: none }
+- slug: add-context-and-limits
+  position: 2
+  code: '02'
+  name: Add context and limits
+  blurb: Research library behavior, define data constraints and justify implementation choices.
+  tip: Constraints shrink the space of wrong answers.
+  accent: cyan
+  unlock: { type: none } # v1: every level is open (see 10.5)
+- slug: shape-the-output
+  position: 3
+  code: '03'
+  name: Shape the output
+  blurb: Produce validated reports, reproducible training tools and explicit interfaces.
+  tip: Need a format? Ask for that format and nothing else.
+  accent: lime
+  unlock: { type: none }
+- slug: iterate-and-debug
+  position: 4
+  code: '04'
+  name: Iterate and debug
+  blurb: Investigate failures, diagnose data leakage and repair code without weakening tests.
+  tip: Give the AI the evidence. Paste the real error.
+  accent: cyan
+  unlock: { type: none }
+- slug: ship-a-full-program
+  position: 5
+  code: '05'
+  name: Ship a full program
+  blurb: Build a small application with a coherent structure, model evaluation and regression tests.
+  tip: 'A good spec reads like a ticket: stack, features, deliverables.'
+  accent: lime
+  unlock: { type: none }

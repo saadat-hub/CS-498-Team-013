@@ -1,0 +1,94 @@
+{
+  'slug': 'classification-metrics',
+  'level': 'say-what-you-want',
+  'position': 4,
+  'published': true,
+  'title': 'Evaluate an imbalanced classifier',
+  'brief': 'Compute precision, recall and F1 for the positive class using scikit-learn. Explain why accuracy hides poor performance for this dataset, specify zero_division behavior, and include a test that checks the numeric results. Cite the metric documentation.',
+  'hint': 'Identify true positives, false positives and false negatives before selecting the metric arguments.',
+  'tags': ['machine-learning', 'python', 'research', 'testing', 'token-budget'],
+  'token_budget': 180,
+  'xp': 100,
+  'difficulty': 1,
+  'context':
+    {
+      'dataset':
+        { 'y_true': [0, 0, 0, 0, 0, 0, 0, 0, 1, 1], 'y_pred': [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      'expected_metrics':
+        { 'accuracy': 0.9, 'precision': 1.0, 'recall': 0.5, 'f1': 0.6666666666666666 },
+      'acceptance_tests': "def test_positive_class_metrics():\n    scores = evaluate_predictions([0,0,0,0,0,0,0,0,1,1], [0,0,0,0,0,0,0,0,0,1])\n    assert scores[\"precision\"] == 1.0\n    assert scores[\"recall\"] == 0.5\n    assert scores[\"f1\"] == pytest.approx(2/3)\n",
+      'track': 'machine-learning',
+      'submission_mode': 'code-and-research-notes',
+      'learning_objectives':
+        [
+          'Correctly computes positive-class precision 1, recall 0.5 and F1 2/3 and sets zero_division explicitly.',
+          'Explains why 90 percent accuracy misses half the positive class and discusses the task-dependent precision/recall tradeoff.',
+          'Provides Python/scikit-learn code, a numeric regression test, and a relevant official documentation citation.',
+        ],
+      'references':
+        [
+          {
+            'title': 'Primary library documentation',
+            'url': 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html',
+          },
+        ],
+      'evaluation_mode': 'static-and-model-review',
+      'instructions': 'Submit your implementation or an actionable implementation prompt, tests, and research notes. Reference the supplied evidence. Do not claim tests ran unless execution evidence is available.',
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Addresses precision',
+        'config': { 'any': ['precision'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Addresses recall',
+        'config': { 'any': ['recall'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Addresses f1',
+        'config': { 'any': ['f1'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-4',
+        'type': 'must_include',
+        'label': 'Addresses accuracy',
+        'config': { 'any': ['accuracy'], 'match': 'word' },
+      },
+      {
+        'key': 'solution-quality',
+        'type': 'llm_judge',
+        'label': 'Meets implementation, verification and research criteria',
+        'config':
+          {
+            'rubric': 'Evaluate the learner submission as a practical machine-learning engineering solution or a precise request for one. Assess technical correctness, test coverage and research evidence against the provided context. Keyword repetition alone is insufficient. Do not treat a claimed execution as verified; judge only supplied code and reasoning. An actionable prompt must specify the concrete requirements for every criterion.',
+            'passThreshold': 1,
+            'criteria':
+              [
+                {
+                  'id': 'metrics',
+                  'description': 'Correctly computes positive-class precision 1, recall 0.5 and F1 2/3 and sets zero_division explicitly.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'interpretation',
+                  'description': 'Explains why 90 percent accuracy misses half the positive class and discusses the task-dependent precision/recall tradeoff.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'verification',
+                  'description': 'Provides Python/scikit-learn code, a numeric regression test, and a relevant official documentation citation.',
+                  'weight': 1,
+                },
+              ],
+          },
+      },
+    ],
+}

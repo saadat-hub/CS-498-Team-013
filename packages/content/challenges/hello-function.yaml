@@ -1,0 +1,30 @@
+{
+  'slug': 'hello-function',
+  'level': 'say-what-you-want',
+  'position': 1,
+  'published': true,
+  'title': 'Hello, function',
+  'brief': 'Get the AI to write a Python function that reverses a string.',
+  'hint': 'Get the AI to write a Python function that reverses a string.',
+  'tags': ['token-budget', 'must-include'],
+  'token_budget': 25,
+  'xp': 50,
+  'difficulty': 1,
+  'context': {},
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Includes python',
+        'config': { 'any': ['python'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Includes revers',
+        'config': { 'any': ['revers'], 'match': 'substring' },
+      },
+    ],
+}

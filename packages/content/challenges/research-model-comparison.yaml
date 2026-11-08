@@ -1,0 +1,106 @@
+{
+  'slug': 'research-model-comparison',
+  'level': 'ship-a-full-program',
+  'position': 4,
+  'published': true,
+  'title': 'Run and explain a reproducible model comparison',
+  'brief': 'Build a small comparison application for logistic regression and a random forest using a built-in scikit-learn dataset. Use stratified cross-validation on training data, reserve a final holdout, report mean and variation of F1, and explain the final choice using evidence and cited documentation. Include tests for reproducibility and data isolation.',
+  'hint': 'Use cross-validation to choose the model, then evaluate the selected model once on the untouched holdout. Do not choose using holdout scores.',
+  'tags': ['machine-learning', 'python', 'research', 'testing', 'token-budget'],
+  'token_budget': 360,
+  'xp': 250,
+  'difficulty': 5,
+  'context':
+    {
+      'dataset': 'scikit-learn breast_cancer built-in dataset',
+      'deliverables':
+        [
+          'compare.py',
+          'report.py',
+          'tests/test_comparison.py',
+          'requirements.txt',
+          'research_notes.md',
+        ],
+      'report_contract':
+        {
+          'cv_results': 'per-model mean F1, standard deviation, and fold count',
+          'selection': 'chosen model and selection rule based on cross-validation',
+          'holdout': 'one final evaluation for the selected model',
+          'sources': 'official documentation URLs and the decisions they support',
+        },
+      'track': 'machine-learning',
+      'submission_mode': 'code-and-research-notes',
+      'learning_objectives':
+        [
+          'Uses the built-in dataset, a stratified seeded training/holdout split, identical stratified CV folds, and appropriate preprocessing inside each model pipeline.',
+          'Selects using training CV F1, reports fold count and score standard deviation, then evaluates the chosen model once on the untouched holdout without invented measurements.',
+          'Provides runnable comparison/report code, dependency declarations, reproducibility and holdout-isolation tests, and explained official research sources.',
+        ],
+      'references':
+        [
+          {
+            'title': 'Primary library documentation',
+            'url': 'https://scikit-learn.org/stable/modules/cross_validation.html',
+          },
+        ],
+      'evaluation_mode': 'static-and-model-review',
+      'instructions': 'Submit your implementation or an actionable implementation prompt, tests, and research notes. Reference the supplied evidence. Do not claim tests ran unless execution evidence is available.',
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Addresses cross-validation / cross validation / stratifiedkfold',
+        'config':
+          { 'any': ['cross-validation', 'cross validation', 'stratifiedkfold'], 'match': 'phrase' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Addresses holdout',
+        'config': { 'any': ['holdout'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Addresses f1',
+        'config': { 'any': ['f1'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-4',
+        'type': 'must_include',
+        'label': 'Addresses test / pytest',
+        'config': { 'any': ['test', 'pytest'], 'match': 'word' },
+      },
+      {
+        'key': 'solution-quality',
+        'type': 'llm_judge',
+        'label': 'Meets implementation, verification and research criteria',
+        'config':
+          {
+            'rubric': 'Evaluate the learner submission as a practical machine-learning engineering solution or a precise request for one. Assess technical correctness, test coverage and research evidence against the provided context. Keyword repetition alone is insufficient. Do not treat a claimed execution as verified; judge only supplied code and reasoning. An actionable prompt must specify the concrete requirements for every criterion.',
+            'passThreshold': 1,
+            'criteria':
+              [
+                {
+                  'id': 'experiment',
+                  'description': 'Uses the built-in dataset, a stratified seeded training/holdout split, identical stratified CV folds, and appropriate preprocessing inside each model pipeline.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'selection',
+                  'description': 'Selects using training CV F1, reports fold count and score standard deviation, then evaluates the chosen model once on the untouched holdout without invented measurements.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'delivery',
+                  'description': 'Provides runnable comparison/report code, dependency declarations, reproducibility and holdout-isolation tests, and explained official research sources.',
+                  'weight': 1,
+                },
+              ],
+          },
+      },
+    ],
+}

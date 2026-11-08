@@ -1,0 +1,57 @@
+{
+  'slug': 'make-it-testable',
+  'level': 'ship-a-full-program',
+  'position': 2,
+  'published': true,
+  'title': 'Make it testable',
+  'brief': 'Ask for a pure function and tests, describing cases the tests missed, skip, or break.',
+  'hint': 'Ask for a pure function and tests, describing cases the tests missed, skip, or break.',
+  'tags': ['token-budget', 'must-include'],
+  'token_budget': 120,
+  'xp': 200,
+  'difficulty': 5,
+  'context':
+    {
+      'starter_code': "def safe_mean(values):\n    return sum(values) / len(values)\n",
+      'function_contract': 'Implement safe_mean(values) as a pure arithmetic-mean function. Reject empty input with ValueError, preserve valid zeros, and leave the input sequence unchanged.',
+      'failure_evidence': 'An empty batch currently raises ZeroDivisionError instead of the specified ValueError.',
+      'acceptance_cases':
+        ['safe_mean([2, 4, 6]) == 4', 'safe_mean([0, 0]) == 0', 'safe_mean([]) raises ValueError'],
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Includes function',
+        'config': { 'any': ['function'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Includes test',
+        'config': { 'any': ['test'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Includes missed / skip / gap / break',
+        'config': { 'any': ['missed', 'skip', 'gap', 'break'], 'match': 'word' },
+      },
+      {
+        'key': 'code-tests',
+        'type': 'code_tests',
+        'label': 'Coming soon: isolated code tests',
+        'required': false,
+        'client_visible': false,
+        'config':
+          {
+            'language': 'python',
+            'extract': 'first_code_block',
+            'tests': "import pytest\nfrom solution import safe_mean\n\ndef test_mean():\n    assert safe_mean([2, 4, 6]) == pytest.approx(4)\n\ndef test_empty():\n    with pytest.raises(ValueError):\n        safe_mean([])\n\ndef test_zero():\n    assert safe_mean([0, 0]) == 0",
+            'timeoutMs': 5000,
+          },
+      },
+    ],
+}
