@@ -80,6 +80,9 @@ export class Database implements Query {
     const folder = fileURLToPath(new URL('../migrations/', import.meta.url));
     const files = (await readdir(folder)).filter((f) => /^\d+.*\.sql$/.test(f)).sort();
     await this.tx(async (q) => {
+      // Lock before creating the tracking table: IF NOT EXISTS alone can race
+      // in PostgreSQL's catalogs when two fresh processes migrate together.
+      if (this.pool) await q.query('SELECT pg_advisory_xact_lock(498013)');
       await q.query(
         'CREATE TABLE IF NOT EXISTS schema_migrations (version int PRIMARY KEY, applied_at timestamptz DEFAULT now())',
       );

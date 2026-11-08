@@ -8,7 +8,7 @@ it.skipIf(!process.env.TEST_DATABASE_URL)(
   async () => {
     const db = new Database(process.env.TEST_DATABASE_URL!);
     try {
-      await db.migrate();
+      await Promise.all([db.migrate(), db.migrate()]);
       await syncContent(db);
       await seedBase(db);
       expect((await one(db, 'SELECT count(*)::int n FROM levels')).n).toBe(5);
