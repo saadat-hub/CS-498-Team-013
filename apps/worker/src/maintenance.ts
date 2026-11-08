@@ -4,6 +4,7 @@ import type { Config } from '../../../packages/shared/src/config.js';
 import { seedBase } from '../../../packages/db/src/content.js';
 import { refreshStats } from '../../api/src/services/progress.js';
 export const schedules = [
+  { name: 'grade.dispatch', repeat: { every: 5000 } },
   { name: 'grade.sweep', repeat: { every: 300000 } },
   { name: 'leaderboard.rebuild', repeat: { pattern: '10 3 * * *', tz: 'UTC' } },
   { name: 'stats.reconcile', repeat: { pattern: '30 3 * * *', tz: 'UTC' } },
@@ -12,6 +13,30 @@ export const schedules = [
   { name: 'users.purge', repeat: { pattern: '0 4 * * *', tz: 'UTC' } },
   { name: 'usage.rollup', repeat: { pattern: '5 * * * *', tz: 'UTC' } },
 ];
+export async function dispatchSubmissions(db: Database, queue: Queue) {
+  const pending = (
+    await db.query(
+      "SELECT d.submission_id FROM submission_dispatch d JOIN submissions s ON s.id=d.submission_id WHERE s.status='queued' ORDER BY d.created_at LIMIT 100",
+    )
+  ).rows;
+  for (const row of pending) {
+    await queue.add(
+      'grade',
+      { submissionId: row.submission_id },
+      {
+        jobId: row.submission_id,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+        removeOnComplete: 1000,
+      },
+    );
+    await db.query('DELETE FROM submission_dispatch WHERE submission_id=$1', [row.submission_id]);
+  }
+  await db.query(
+    "DELETE FROM submission_dispatch d USING submissions s WHERE s.id=d.submission_id AND s.status IN ('passed','failed','error')",
+  );
+  return { dispatched: pending.length };
+}
 export async function sweepSubmissions(db: Database, gradeQueue: Queue) {
   const recovered = await db.tx(async (q) => {
     await q.query(

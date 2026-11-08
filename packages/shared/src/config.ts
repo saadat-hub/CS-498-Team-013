@@ -11,7 +11,8 @@ export const configSchema = z.object({
   REDIS_URL: z.string(),
   SESSION_SECRET: z.string().min(32),
   IP_HASH_SECRET: z.string().min(32),
-  LLM_PROVIDER: z.enum(['fake', 'anthropic']).default('anthropic'),
+  LLM_PROVIDER: z.enum(['fake', 'disabled', 'anthropic']).default('anthropic'),
+  LOCAL_DEVELOPMENT: z.enum(['true', 'false']).default('false'),
   ANTHROPIC_API_KEY: z.string().default(''),
   TOKEN_COUNT_MODEL: z.string().default(''),
   RUN_MODEL: z.string().default(''),
@@ -50,6 +51,16 @@ export function loadConfig(overrides: Record<string, unknown> = {}): Config {
       }
     : {};
   const c = configSchema.parse({ ...process.env, ...testConfig, ...overrides });
+  if (c.LOCAL_DEVELOPMENT === 'true') {
+    if (
+      c.NODE_ENV !== 'development' ||
+      !['localhost', '127.0.0.1'].includes(new URL(c.APP_ORIGIN).hostname) ||
+      !['localhost', '127.0.0.1'].includes(new URL(c.API_URL).hostname)
+    )
+      throw new Error('Local development is restricted to development mode and loopback URLs.');
+    if (c.LLM_PROVIDER === 'fake')
+      throw new Error('Local development must use a real or disabled provider.');
+  }
   if (c.FEATURE_CODE_TESTS === 'true')
     throw new Error('Phase 2 sandbox is not configured; FEATURE_CODE_TESTS must be false.');
   if (
@@ -57,14 +68,14 @@ export function loadConfig(overrides: Record<string, unknown> = {}): Config {
     (!c.ANTHROPIC_API_KEY || !c.RUN_MODEL || !c.JUDGE_MODEL || !c.TOKEN_COUNT_MODEL)
   )
     throw new Error('Anthropic requires API key and all three model settings.');
-  if (c.NODE_ENV !== 'test') {
+  if (c.NODE_ENV !== 'test' && c.LOCAL_DEVELOPMENT !== 'true') {
     for (const key of ['DATABASE_URL', 'REDIS_URL', 'SESSION_SECRET', 'IP_HASH_SECRET'] as const)
       if (!process.env[key] && !overrides[key])
         throw new Error(`${key} must be explicitly configured in production`);
     if (
       !/^postgres(ql)?:\/\//.test(c.DATABASE_URL) ||
       !/^rediss?:\/\//.test(c.REDIS_URL) ||
-      c.LLM_PROVIDER === 'fake' ||
+      c.LLM_PROVIDER !== 'anthropic' ||
       c.EMAIL_PROVIDER === 'console' ||
       !c.EMAIL_API_KEY ||
       !c.APP_ORIGIN.startsWith('https://') ||

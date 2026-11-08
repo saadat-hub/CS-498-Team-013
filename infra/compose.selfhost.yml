@@ -1,0 +1,76 @@
+name: prompt-lab
+x-app: &app
+  build:
+    context: ..
+    dockerfile: infra/Dockerfile
+  env_file: ../.env
+  environment: &environment
+    NODE_ENV: production
+    LOCAL_DEVELOPMENT: 'false'
+    API_PORT: '8080'
+    APP_ORIGIN: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
+    API_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
+    DATABASE_URL: postgres://promptlab:${POSTGRES_PASSWORD:?Set a URL-safe POSTGRES_PASSWORD}@postgres:5432/promptlab
+    REDIS_URL: redis://redis:6379
+    TRUST_PROXY: '172.16.0.0/12'
+  init: true
+  read_only: true
+  tmpfs: ['/tmp:size=64m,mode=1777']
+  cap_drop: ['ALL']
+  security_opt: ['no-new-privileges:true']
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: promptlab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: promptlab
+    volumes: ['postgres:/var/lib/postgresql/data']
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U promptlab -d promptlab']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes: ['redis:/data']
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  release:
+    <<: *app
+    command: ['node', 'dist/packages/db/src/release.js']
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+  api:
+    <<: *app
+    command: ['node', 'dist/apps/api/src/server.js']
+    restart: unless-stopped
+    depends_on:
+      release: { condition: service_completed_successfully }
+  worker:
+    <<: *app
+    command: ['node', 'dist/apps/worker/src/index.js']
+    restart: unless-stopped
+    stop_grace_period: 90s
+    depends_on:
+      release: { condition: service_completed_successfully }
+  caddy:
+    image: caddy:2
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN}
+    ports: ['80:80', '443:443']
+    volumes: ['./Caddyfile:/etc/caddy/Caddyfile:ro', 'caddy_data:/data', 'caddy_config:/config']
+    restart: unless-stopped
+    depends_on: ['api']
+volumes:
+  postgres:
+  redis:
+  caddy_data:
+  caddy_config:

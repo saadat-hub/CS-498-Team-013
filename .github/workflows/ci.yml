@@ -11,7 +11,7 @@ jobs:
           POSTGRES_PASSWORD: promptlab
           POSTGRES_DB: promptlab_test
         ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U promptlab" --health-interval 5s --health-timeout 5s --health-retries 10
+        options: --health-cmd "pg_isready -U promptlab -d promptlab_test" --health-interval 5s --health-timeout 5s --health-retries 10
       redis:
         image: redis:7
         ports: ['6379:6379']
@@ -24,6 +24,15 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: |
+            playwright-report/
+            test-results/
       - run: npm run build
       - run: npm audit --audit-level=high
       - run: npm run test:services

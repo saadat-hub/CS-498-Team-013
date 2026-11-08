@@ -325,6 +325,12 @@ export async function routes(
         fail(403, 'level_locked', 'Complete the preceding level first');
       const count = await llm.count(b.prompt, u.id),
         model = c.checks.some((x: any) => x.phase === 'model' && x.type !== 'code_tests');
+      if (model && llm.config.LLM_PROVIDER === 'disabled')
+        fail(
+          503,
+          'ai_not_configured',
+          'This challenge needs AI grading. Configure Anthropic to submit, or try a foundational level 1 or 2 challenge.',
+        );
       const created = await db.tx(async (q) => {
         await q.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [u.id]);
         existing = await one(
@@ -339,7 +345,7 @@ export async function routes(
         }
         const quota = await one(
           q,
-          `SELECT count(*)::int n FROM submissions WHERE user_id=$1 AND status<>'error' AND created_at>=date_trunc('day',now())`,
+          `SELECT count(*)::int n FROM submissions WHERE user_id=$1 AND status<>'error' AND created_at>=(date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`,
           [u.id],
         );
         if (quota.n >= 200) fail(429, 'daily_submission_quota', 'Daily submission limit reached');
@@ -362,6 +368,11 @@ export async function routes(
           "INSERT INTO events(user_id,kind,payload) VALUES($1,'submission_created',$2)",
           [u.id, JSON.stringify({ submissionId: s.id, challengeId: c.challenge_id })],
         );
+        if (model)
+          await q.query(
+            'INSERT INTO submission_dispatch(submission_id) VALUES($1) ON CONFLICT DO NOTHING',
+            [s.id],
+          );
         return { s, fresh: true };
       });
       if (created.fresh) {
@@ -374,7 +385,17 @@ export async function routes(
                 !runInstant(k, b.prompt, count.count, c.token_budget).passed,
             );
             if (!blocked) await llm.reserve(u.id, created.s.id, c, c.checks);
-            await enqueue(created.s.id);
+            try {
+              await enqueue(created.s.id);
+              await db.query('DELETE FROM submission_dispatch WHERE submission_id=$1', [
+                created.s.id,
+              ]);
+            } catch {
+              r.log.warn(
+                { submissionId: created.s.id },
+                'Queue delivery deferred to durable dispatcher',
+              );
+            }
           } catch (e) {
             await db.query(
               "UPDATE submissions SET status='error',error_code='grading_paused',graded_at=now() WHERE id=$1",
@@ -461,7 +482,7 @@ export async function routes(
       { limit, offset } = pagination(r.query),
       rows = (
         await db.query(
-          `SELECT s.id,l.position||'.'||c.position code,v.title challenge_title,s.token_count,s.token_budget,s.created_at,CASE WHEN s.status='passed' THEN 'pass' WHEN s.status='error' THEN 'error' WHEN s.status IN ('queued','grading') THEN 'pending' WHEN s.token_count>s.token_budget AND NOT EXISTS(SELECT 1 FROM submission_check_results cr JOIN challenge_checks ck ON ck.challenge_version_id=s.challenge_version_id AND ck.key=cr.check_key WHERE cr.submission_id=s.id AND ck.required AND NOT cr.passed AND cr.type<>'token_budget') THEN 'over' ELSE 'fail' END result FROM submissions s JOIN challenges c ON c.id=s.challenge_id JOIN challenge_versions v ON v.id=s.challenge_version_id JOIN levels l ON l.id=c.level_id WHERE s.user_id=$1 AND ($2::text IS NULL OR c.slug=$2) ORDER BY s.created_at DESC,s.id DESC LIMIT $3 OFFSET $4`,
+          `SELECT s.id,c.slug challenge_slug,l.position||'.'||c.position code,v.title challenge_title,s.token_count,s.token_budget,s.created_at,CASE WHEN s.status='passed' THEN 'pass' WHEN s.status='error' THEN 'error' WHEN s.status IN ('queued','grading') THEN 'pending' WHEN s.token_count>s.token_budget AND NOT EXISTS(SELECT 1 FROM submission_check_results cr JOIN challenge_checks ck ON ck.challenge_version_id=s.challenge_version_id AND ck.key=cr.check_key WHERE cr.submission_id=s.id AND ck.required AND NOT cr.passed AND cr.type<>'token_budget') THEN 'over' ELSE 'fail' END result FROM submissions s JOIN challenges c ON c.id=s.challenge_id JOIN challenge_versions v ON v.id=s.challenge_version_id JOIN levels l ON l.id=c.level_id WHERE s.user_id=$1 AND ($2::text IS NULL OR c.slug=$2) ORDER BY s.created_at DESC,s.id DESC LIMIT $3 OFFSET $4`,
           [u.id, r.query.challengeSlug ?? null, limit + 1, offset],
         )
       ).rows;
@@ -648,13 +669,26 @@ SELECT e.id,e.title,e.prompt,'{}'::text[] tags, '2000-01-01'::timestamptz create
         avgBudgetUsed: stats?.avg_budget_used ?? null,
       },
       continue: await latestDraft(db, u.id),
+      nextChallenge: camel(
+        await one(
+          db,
+          "SELECT c.slug,v.title,v.brief,v.token_budget,v.xp,l.position||'.'||c.position code FROM challenges c JOIN levels l ON l.id=c.level_id JOIN challenge_versions v ON v.id=c.current_version_id LEFT JOIN progress p ON p.challenge_id=c.id AND p.user_id=$1 WHERE c.published AND l.published AND p.first_cleared_at IS NULL AND c.position<100 ORDER BY l.position,c.position LIMIT 1",
+          [u.id],
+        ),
+      ),
       weeklyXp,
       weeklyXpTotal: weeklyXp.reduce((n: number, x: any) => n + x.xp, 0),
-      roadmap: roadmap.map((x) => ({ code: x.code, name: x.name, ...x.me })),
+      roadmap: roadmap.map((x) => ({
+        slug: x.slug,
+        code: x.code,
+        name: x.name,
+        challengeCount: x.challengeCount,
+        ...x.me,
+      })),
       recentSubmissions: camel(
         (
           await db.query(
-            `SELECT s.id,l.position||'.'||c.position code,s.status,s.token_count,s.token_budget,s.created_at,v.title challenge_title,CASE WHEN s.status='passed' THEN 'pass' WHEN s.status='error' THEN 'error' WHEN s.status IN ('queued','grading') THEN 'pending' WHEN s.token_count>s.token_budget AND NOT EXISTS(SELECT 1 FROM submission_check_results cr JOIN challenge_checks ck ON ck.challenge_version_id=s.challenge_version_id AND ck.key=cr.check_key WHERE cr.submission_id=s.id AND ck.required AND NOT cr.passed AND cr.type<>'token_budget') THEN 'over' ELSE 'fail' END result FROM submissions s JOIN challenge_versions v ON v.id=s.challenge_version_id JOIN challenges c ON c.id=s.challenge_id JOIN levels l ON l.id=c.level_id WHERE s.user_id=$1 ORDER BY s.created_at DESC LIMIT 5`,
+            `SELECT s.id,c.slug challenge_slug,l.position||'.'||c.position code,s.status,s.token_count,s.token_budget,s.created_at,v.title challenge_title,CASE WHEN s.status='passed' THEN 'pass' WHEN s.status='error' THEN 'error' WHEN s.status IN ('queued','grading') THEN 'pending' WHEN s.token_count>s.token_budget AND NOT EXISTS(SELECT 1 FROM submission_check_results cr JOIN challenge_checks ck ON ck.challenge_version_id=s.challenge_version_id AND ck.key=cr.check_key WHERE cr.submission_id=s.id AND ck.required AND NOT cr.passed AND cr.type<>'token_budget') THEN 'over' ELSE 'fail' END result FROM submissions s JOIN challenge_versions v ON v.id=s.challenge_version_id JOIN challenges c ON c.id=s.challenge_id JOIN levels l ON l.id=c.level_id WHERE s.user_id=$1 ORDER BY s.created_at DESC LIMIT 5`,
             [u.id],
           )
         ).rows,
@@ -686,6 +720,18 @@ SELECT e.id,e.title,e.prompt,'{}'::text[] tags, '2000-01-01'::timestamptz create
   post('/admin/content/sync', async (r: any) => {
     role(r, ['author', 'admin']);
     return syncContent(db, r.user.id);
+  });
+  get('/admin/challenges', async (r: any) => {
+    role(r, ['author', 'admin']);
+    return {
+      items: camel(
+        (
+          await db.query(
+            'SELECT c.slug,c.published,v.title,v.version,v.token_budget,v.xp,l.code level_code FROM challenges c JOIN challenge_versions v ON v.id=c.current_version_id JOIN levels l ON l.id=c.level_id ORDER BY l.position,c.position',
+          )
+        ).rows,
+      ),
+    };
   });
   for (const action of ['publish', 'unpublish'])
     post(`/admin/challenges/:slug/${action}`, async (r: any) => {

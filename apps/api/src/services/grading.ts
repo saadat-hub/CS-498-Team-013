@@ -11,6 +11,13 @@ export class GradingService {
     public llm: LlmService,
   ) {}
   async dryRun(c: any, prompt: string, user: string) {
+    if (
+      this.llm.config.LLM_PROVIDER === 'disabled' &&
+      c.checks.some((k: Check) => k.phase === 'model' && k.type !== 'code_tests')
+    ) {
+      const { fail } = await import('../../../../packages/shared/src/utils.js');
+      fail(503, 'ai_not_configured', 'Configure the AI provider to evaluate this challenge.');
+    }
     const count = await this.llm.count(prompt, user);
     const checks: Check[] = c.checks,
       results: Result[] = checks
@@ -79,19 +86,19 @@ export class GradingService {
         ]);
     }
   }
-  async grade(id: string) {
+  async grade(id: string, options: { retryOnError?: boolean } = {}) {
     return trace.getTracer('promptlab').startActiveSpan('grade', async (span) => {
       const start = performance.now();
       span.setAttribute('submissionId', id);
       try {
-        return await this.gradeInner(id);
+        return await this.gradeInner(id, options.retryOnError ?? false);
       } finally {
         gradeMetrics.duration.record((performance.now() - start) / 1000);
         span.end();
       }
     });
   }
-  private async gradeInner(id: string) {
+  private async gradeInner(id: string, retryOnError: boolean) {
     const s = await one(this.db, 'SELECT * FROM submissions WHERE id=$1', [id]);
     if (!s || ['passed', 'failed', 'error'].includes(s.status)) return;
     // Lease is durable. Retried/stuck jobs use the sweeper to recover rather than duplicate LLM calls.
@@ -132,8 +139,10 @@ export class GradingService {
       const blocked = checks.some(
         (c) => c.required && c.phase === 'instant' && !results.find((r) => r.key === c.key)?.passed,
       );
-      let output = '';
-      if (v.run_config && !blocked) {
+      if (!blocked && checks.some((c) => c.phase === 'model' && c.type !== 'code_tests'))
+        await this.llm.reserve(s.user_id, id, v, checks);
+      let output = s.model_output ?? '';
+      if (v.run_config && !blocked && s.model_output === null) {
         const r = await this.llm.provider.complete({
           model: this.llm.config.RUN_MODEL,
           system: v.run_config.system,
@@ -185,14 +194,15 @@ export class GradingService {
       });
     } catch (e) {
       await this.db.query(
-        "UPDATE submissions SET status='error',error_code='model_unavailable',graded_at=now() WHERE id=$1 AND status='grading'",
-        [id],
+        "UPDATE submissions SET status=$2,error_code=$3,graded_at=CASE WHEN $2='error' THEN now() ELSE NULL END,grading_started_at=NULL WHERE id=$1 AND status='grading'",
+        [id, retryOnError ? 'queued' : 'error', retryOnError ? null : 'model_unavailable'],
       );
       if (this.llm.config.NODE_ENV !== 'test')
         console.error('Grading failed', id, e instanceof Error ? e.name : 'unknown');
+      if (retryOnError) throw e;
     } finally {
       await this.db.query(
-        'UPDATE model_reservations SET reserved_micros=0 WHERE submission_id=$1',
+        "UPDATE model_reservations SET reserved_micros=0 WHERE submission_id=$1 AND EXISTS(SELECT 1 FROM submissions WHERE id=$1 AND status IN ('passed','failed','error'))",
         [id],
       );
       await this.llm.cache.del(`dashboard:${s.user_id}`);

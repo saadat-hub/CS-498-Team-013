@@ -22,6 +22,15 @@ const service = {
   GOOGLE_CLIENT_SECRET: '',
 };
 describe('service configuration boundaries', () => {
+  it('never allows local sign-in or disabled grading in production', () => {
+    expect(() => loadConfig({ ...service, LOCAL_DEVELOPMENT: 'true' })).toThrow(
+      'Local development',
+    );
+    expect(() => loadConfig({ ...service, LLM_PROVIDER: 'disabled' })).toThrow();
+    expect(() =>
+      loadConfig({ ...service, NODE_ENV: 'development', LOCAL_DEVELOPMENT: 'true' }),
+    ).toThrow('loopback');
+  });
   it('accepts explicitly configured services', () =>
     expect(loadConfig(service).LLM_PROVIDER).toBe('anthropic'));
   it.each([

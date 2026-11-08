@@ -18,6 +18,7 @@ it('defines separate release, API and worker processes with a release dependency
 it('declares the specified independent maintenance schedules', () => {
   expect(schedules.map((s) => s.name).sort()).toEqual([
     'daily.pick',
+    'grade.dispatch',
     'grade.sweep',
     'leaderboard.rebuild',
     'stats.reconcile',

@@ -1,71 +1,60 @@
-# Prompt Lab backend
+# Prompt Lab
 
-Prompt Lab is a learning platform for programming and debugging. Learners investigate problems, consult library documentation, implement solutions, inspect failures and strengthen their tests. AI-assisted exercises teach learners to express precise requirements and evaluate the resulting code rather than accept an answer without evidence.
+**Learn to give AI clearer instructions—and build programs you understand.**
 
-The backend manages accounts, challenge content, submissions, grading, progress and administrative operations. The catalog contains twenty exercises across five learning levels: ten foundational programming exercises and ten machine-learning extensions.
+Prompt Lab is a learning website with 20 challenges across five levels. Start with a simple request, work up to debugging and small applications, and explore practical machine-learning exercises along the way.
 
-## Architecture
+## How it works
 
-The application runs as an API service and a background worker. PostgreSQL 16 stores durable records. Redis 7 supports job delivery, rate limits, caches and leaderboard projections. Anthropic provides model-backed evaluation through a provider interface. Transactional sign-in email is delivered through a queued email adapter.
+1. **Choose a challenge.** Read the task and see what a good answer needs to include.
+2. **Write your prompt.** Get helpful checks while you type. Your work saves automatically when you are signed in.
+3. **Get feedback.** Submit your work, see what passed, and improve anything that needs another try.
+4. **Track your progress.** Earn XP, unlock badges, and keep your best prompts in your library.
 
-| Component          | Responsibility                                                                 |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `apps/api`         | Versioned REST API, authentication, authorization and request validation       |
-| `apps/worker`      | Model grading, email delivery and scheduled maintenance                        |
-| `packages/db`      | Drizzle-bound SQL, versioned migrations, initialization and ledger projections |
-| `packages/content` | Challenge definitions, validation, research references and content versioning  |
-| `packages/grading` | Shared deterministic rules and server-side output evaluation                   |
-| `packages/llm`     | Token counting, structured judging, caching and spending controls              |
-| `packages/shared`  | Configuration, request contracts, email interfaces and telemetry               |
+You can explore the challenges without an account. Sign in to save your work and progress.
 
-## Learning experience
+## Try it on your computer
 
-Learners progress from narrowly scoped functions to library-based data preparation, structured evaluation reports, debugging workflows and small applications. Machine-learning exercises cover NumPy feature scaling, classification metrics, pandas missing-data handling, scikit-learn pipelines, reproducible training, leakage diagnosis, failing pytest cases, inference services and model comparison.
+You do not need to buy a server to try Prompt Lab.
 
-Each exercise defines its objective, supporting evidence, constraints, deliverables, references and evaluation criteria. Research-based exercises require learners to explain how a documented library behavior informed the implementation. Tests and evaluation results must remain distinguishable from unsupported claims.
+1. Install [Node.js](https://nodejs.org/en/download), version 22.15 or newer.
+2. Download this project and open its folder in a terminal, such as PowerShell.
+3. Run these two commands, one at a time:
 
-The original ten challenge identities remain available. Additional exercises extend the catalog without replacing historical challenge versions or progress records. Catalog counts are derived from published content.
+   ```sh
+   npm ci
+   npm run dev
+   ```
 
-## Service configuration
+4. Open **http://localhost:3000** in your browser.
+5. Click **Start your journey**, then **Start local session**.
 
-Use Node.js 22.12 or newer. Configure the environment variables documented in `.env.example` with the deployment's PostgreSQL, Redis, HTTPS origins, provider credentials and independently generated secrets. The API requires real service configuration; simulated providers and embedded databases are used only by automated tests.
+The first command installs what the project needs. The second starts the website. Keep the terminal open while you use it; press **Ctrl+C** when you want to stop.
 
-```sh
-npm ci
-npm run build
-npm run release
-npm start
-```
+On Windows, you can also start the project with `Start-PromptLab.ps1`.
 
-Run the worker as a separate process:
+## What you can use
 
-```sh
-npm run worker
-```
+- A dashboard with your progress, activity, and achievements.
+- Five learning levels and a searchable challenge collection.
+- A writing workspace with hints, saved drafts, and feedback.
+- Your past attempts and a personal prompt library.
+- A leaderboard, daily challenges, and account settings.
 
-`npm run release` applies database migrations and synchronizes challenge definitions, badges and daily assignments. It does not create demonstration accounts or award synthetic progress. The retained reference-dashboard seeder is restricted to test configuration.
+The original beginner challenges work locally without paying for an AI service. Challenges that need AI feedback require an AI service connection first. The website tells you when that connection is missing.
 
-Container definitions are provided in `infra/Dockerfile` and `infra/compose.production.yml`. Deployment topology, runtime variables, release ordering and operational checks are described in [Deployment](docs/DEPLOYMENT.md).
+Your local progress stays on your computer. An online version needs its own setup to save everyone's progress. AI usage can cost money even when the website's hosting is free.
 
-## API
+## Put it online
 
-Resources are served under `/api/v1`. Sessions use HttpOnly cookies. State-changing requests require a signed CSRF token and a matching allowed Origin. Model-dependent submissions are processed asynchronously; clients can poll a submission or consume its event stream.
+See the [step-by-step hosting guide](docs/HOSTING.md) for free hosting options and the setup process.
 
-The API includes authentication, profiles, levels, challenges, drafts, token counts, submissions, dashboard aggregates, leaderboards, badges, saved prompts, examples, notifications, search and administrative operations. [Frontend integration](docs/FRONTEND.md) describes request flows and error handling.
+## Information for the development team
 
-## Verification
+The technical details are kept separate so this page stays easy to read:
 
-```sh
-npm run check
-npm run lint
-```
-
-The checks compile TypeScript, validate challenge definitions and exercise grading, authentication, ownership, idempotency, concurrency, progress, quotas and reference data. PostgreSQL and Redis service checks are configured in the integration workflow. External-provider validation is performed against the deployment's registered OAuth applications, transactional email domain and model account.
-
-## Documentation
-
-- [Backend specification](backend.md): domain model, database schema, endpoint contracts and acceptance requirements.
-- [Curriculum and content authoring](docs/CONTENT.md): exercise structure, machine-learning objectives and evaluation policy.
-- [Frontend integration](docs/FRONTEND.md): authenticated API calls, drafts and asynchronous results.
-- [Deployment](docs/DEPLOYMENT.md): service requirements, release commands and operations.
-- [Engineering collaboration](docs/GITHUB.md): ownership boundaries, change review and interface coordination.
+- [Running and deploying the app](docs/DEPLOYMENT.md)
+- [Adding and reviewing challenges](docs/CONTENT.md)
+- [How the website connects to its services](docs/FRONTEND.md)
+- [Project requirements](backend.md)
+- [Working together on the code](docs/GITHUB.md)
