@@ -107,6 +107,7 @@ export async function installAuth(
   };
   app.decorateRequest('user', null);
   app.addHook('onRequest', async (r, reply) => {
+    if (!r.url.startsWith('/api/v1/')) return;
     const s = r.cookies.pl_session;
     if (s) {
       r.user = await one(
@@ -190,6 +191,15 @@ export async function installAuth(
     reply.clearCookie('pl_session', { path: '/' });
     return reply.code(204).send();
   });
+  if (c.LOCAL_DEVELOPMENT === 'true') {
+    app.post('/api/v1/auth/local', async (r, reply) => {
+      if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(r.ip))
+        fail(403, 'local_only', 'Local sessions require loopback access');
+      const u = await db.tx((q) => newUser(q, 'local@promptlab.test', 'Local Learner'));
+      await session(reply, u, r);
+      return { user: publicUser(u) };
+    });
+  }
   const providers = {
     github: {
       id: c.GITHUB_CLIENT_ID,

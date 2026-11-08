@@ -33,6 +33,17 @@ export interface LlmProvider {
     signal?: AbortSignal;
   }): Promise<{ result: unknown; inputTokens: number; outputTokens: number }>;
 }
+export class DisabledProvider implements LlmProvider {
+  async countTokens(): Promise<number> {
+    throw new Error('AI is not configured');
+  }
+  async complete(): Promise<Completion> {
+    throw new Error('AI is not configured');
+  }
+  async judge(): Promise<{ result: unknown; inputTokens: number; outputTokens: number }> {
+    throw new Error('AI is not configured');
+  }
+}
 export class FakeProvider implements LlmProvider {
   constructor(private outputs: Record<string, string> = {}) {}
   async countTokens(a: { text: string }) {
@@ -179,7 +190,7 @@ export class LlmService {
     gradeMetrics.llmCost.add(cost / 1e6, { purpose, model });
   }
   async count(text: string, user: string | null) {
-    if (!user || this.config.LLM_PROVIDER === 'fake')
+    if (!user || this.config.LLM_PROVIDER !== 'anthropic')
       return { count: estimate(text), counter: 'estimate:v1', cached: false };
     const key = `tok:${this.config.TOKEN_COUNT_MODEL}:${hash(text)}`,
       cached = await this.cache.get(key);
@@ -199,9 +210,15 @@ export class LlmService {
     // Lock a singleton table, not a process-local mutex, so quotas hold across API replicas.
     return this.db.tx(async (q) => {
       await q.query('LOCK TABLE model_reservations IN EXCLUSIVE MODE');
+      if (submission) {
+        const existing = await one(q, 'SELECT id FROM model_reservations WHERE submission_id=$1', [
+          submission,
+        ]);
+        if (existing) return existing.id as string;
+      }
       const quota = await one(
         q,
-        `SELECT count(*)::int n FROM model_reservations WHERE user_id=$1 AND created_at>=date_trunc('day',now())`,
+        `SELECT count(*)::int n FROM model_reservations WHERE user_id=$1 AND created_at>=(date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`,
         [user],
       );
       if (quota.n >= this.config.USER_DAILY_MODEL_RUNS)
@@ -213,7 +230,7 @@ export class LlmService {
           checks.filter((c) => c.type === 'llm_judge').length;
       const used = await one(
         q,
-        `SELECT COALESCE((SELECT sum(cost_micros) FROM llm_usage WHERE created_at>=date_trunc('day',now())),0)+COALESCE((SELECT sum(reserved_micros) FROM model_reservations WHERE created_at>=date_trunc('day',now())),0) total`,
+        `SELECT COALESCE((SELECT sum(cost_micros) FROM llm_usage WHERE created_at>=(date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')),0)+COALESCE((SELECT sum(reserved_micros) FROM model_reservations WHERE created_at>=(date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')),0) total`,
       );
       if (Number(used.total) + reserve > this.config.LLM_DAILY_BUDGET_USD * 1e6)
         fail(503, 'grading_paused', 'Daily AI grading budget reached');

@@ -5,6 +5,7 @@ import { rebuildLeaderboards } from '../../../packages/db/src/leaderboard.js';
 import { ResendEmailSender } from '../../../packages/shared/src/email.js';
 import {
   schedules,
+  dispatchSubmissions,
   sweepSubmissions,
   reconcileStats,
   notifyStreakRisk,
@@ -28,11 +29,14 @@ export async function runWorker() {
         { jobId: job.id, submissionId: job.data.submissionId, userId: s?.user_id },
         'Grading submission',
       );
-      await grading.grade(job.data.submissionId);
+      await grading.grade(job.data.submissionId, {
+        retryOnError: job.attemptsMade + 1 < (job.opts.attempts ?? 1),
+      });
     },
     { connection: connection as any, concurrency: 8, limiter: { max: 20, duration: 60000 } },
   );
   const handlers: Record<string, () => Promise<unknown>> = {
+    'grade.dispatch': () => dispatchSubmissions(db, gradeQueue),
     'grade.sweep': () => sweepSubmissions(db, gradeQueue),
     'leaderboard.rebuild': () => rebuildLeaderboards(db, connection),
     'stats.reconcile': () => reconcileStats(db),

@@ -6,10 +6,17 @@ export async function installTelemetry(app: FastifyInstance, c: Config) {
   if (c.OTEL_EXPORTER_OTLP_ENDPOINT) {
     const { NodeSDK } = await import('@opentelemetry/sdk-node');
     const { OTLPTraceExporter } = await import('@opentelemetry/exporter-trace-otlp-http');
+    const { OTLPMetricExporter } = await import('@opentelemetry/exporter-metrics-otlp-http');
+    const { PeriodicExportingMetricReader } = await import('@opentelemetry/sdk-metrics');
     const base = c.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, '');
     const sdk = new NodeSDK({
       serviceName: 'promptlab-backend',
       traceExporter: new OTLPTraceExporter({ url: `${base}/v1/traces` }),
+      metricReaders: [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter({ url: `${base}/v1/metrics` }),
+        }),
+      ],
     });
     sdk.start();
     shutdown = () => sdk.shutdown();

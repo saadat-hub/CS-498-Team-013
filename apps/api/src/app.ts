@@ -1,4 +1,7 @@
 import Fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -16,6 +19,7 @@ import {
   MemoryCache,
   AnthropicProvider,
   FakeProvider,
+  DisabledProvider,
   type LlmProvider,
   type Cache,
 } from '../../../packages/llm/src/provider.js';
@@ -31,14 +35,17 @@ export async function createApp(
 ) {
   const c = options.config ?? loadConfig(),
     db = options.db ?? new Database(c.DATABASE_URL);
+  const webRoot = fileURLToPath(new URL('../../../web/', import.meta.url));
+  const serveWeb = existsSync(`${webRoot}/index.html`);
   if (
     c.NODE_ENV !== 'test' &&
+    c.LOCAL_DEVELOPMENT !== 'true' &&
     (!c.REDIS_URL || c.DATABASE_URL.startsWith('pglite:') || c.LLM_PROVIDER !== 'anthropic')
   )
     throw new Error(
       'Application services require PostgreSQL, Redis and Anthropic. Test adapters are restricted to automated tests.',
     );
-  if (c.NODE_ENV !== 'test' && (options.provider || options.db))
+  if (c.NODE_ENV !== 'test' && (options.provider || (options.db && c.LOCAL_DEVELOPMENT !== 'true')))
     throw new Error(
       'Runtime services use validated service connections; injected adapters are reserved for tests.',
     );
@@ -91,9 +98,11 @@ export async function createApp(
     db,
     cache,
     options.provider ??
-      (c.LLM_PROVIDER === 'anthropic'
-        ? new AnthropicProvider(c.ANTHROPIC_API_KEY)
-        : new FakeProvider()),
+      (c.LLM_PROVIDER === 'disabled'
+        ? new DisabledProvider()
+        : c.LLM_PROVIDER === 'anthropic'
+          ? new AnthropicProvider(c.ANTHROPIC_API_KEY)
+          : new FakeProvider()),
   );
   if (maintenanceQueue)
     llm.scheduleLeaderboardRebuild = async () => {
@@ -117,7 +126,7 @@ export async function createApp(
           removeOnComplete: 1000,
         },
       );
-    } else if (c.NODE_ENV === 'test') {
+    } else if (c.NODE_ENV === 'test' || c.LOCAL_DEVELOPMENT === 'true') {
       const task = new Promise<void>((resolve) => setTimeout(resolve, 10)).then(() =>
         grading.grade(id),
       );
@@ -134,13 +143,26 @@ export async function createApp(
   await app.register(helmet, {
     contentSecurityPolicy:
       c.NODE_ENV === 'production'
-        ? { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } }
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:'],
+              connectSrc: ["'self'"],
+              fontSrc: ["'self'"],
+              frameAncestors: ["'none'"],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+            },
+          }
         : false,
     xFrameOptions: { action: 'deny' },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   });
   await app.register(rateLimit, {
-    max: 120,
+    max: c.LOCAL_DEVELOPMENT === 'true' ? 1000 : 120,
+    allowList: (r) => !r.url.startsWith('/api/v1/'),
     timeWindow: '1 minute',
     hook: 'preHandler',
     ...(redis ? { redis } : {}),
@@ -218,18 +240,25 @@ export async function createApp(
       requestId: r.id,
     });
   });
-  app.setNotFoundHandler((r, reply) =>
-    reply.code(404).send({
+  app.setNotFoundHandler((r, reply) => {
+    if (
+      serveWeb &&
+      r.method === 'GET' &&
+      !r.url.startsWith('/api/') &&
+      !r.url.split('?')[0].includes('.')
+    )
+      return reply.sendFile('index.html');
+    return reply.code(404).send({
       error: { code: 'not_found', message: 'Route not found', details: {} },
       requestId: r.id,
-    }),
-  );
+    });
+  });
   app.get('/healthz', async () => ({ status: 'ok' }));
   app.get('/readyz', async () => {
     const schema = await db.query<{ version: number }>(
       'SELECT max(version)::int version FROM schema_migrations',
     );
-    if (!schema.rows[0] || schema.rows[0].version < 3)
+    if (!schema.rows[0] || schema.rows[0].version < 4)
       throw new Error('Required database migrations have not been applied');
     if (redis) await redis.ping();
     return {
@@ -247,6 +276,23 @@ export async function createApp(
     emailQueue ? new QueuedEmailSender(emailQueue) : new ConsoleEmailSender(),
   );
   await routes(app, db, llm, grading, enqueue);
+  app.addHook('onResponse', async (r) => {
+    if (r.user && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(r.method))
+      await cache.del(`dashboard:${r.user.id}`);
+  });
+  app.get('/api/v1/config', async () => ({
+    localDevelopment: c.LOCAL_DEVELOPMENT === 'true',
+    aiEnabled: c.LLM_PROVIDER === 'anthropic',
+    catalog: (
+      await db.query(
+        'SELECT count(c.id)::int challenges,count(DISTINCT l.id)::int levels FROM challenges c JOIN levels l ON l.id=c.level_id WHERE c.published AND l.published AND c.position<100',
+      )
+    ).rows[0],
+    oauth: { github: !!c.GITHUB_CLIENT_ID, google: !!c.GOOGLE_CLIENT_ID },
+  }));
+  if (serveWeb) {
+    await app.register(fastifyStatic, { root: webRoot, prefix: '/', wildcard: false });
+  }
   app.addHook('onClose', async () => {
     await Promise.allSettled([...pending]);
     await queue?.close();
