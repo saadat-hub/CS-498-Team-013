@@ -1,4 +1,25 @@
-# Prompt Lab backend
+# Prompt Lab
+
+A focused learning workspace for better prompts, clearer thinking, and practical programming. The app includes a responsive React frontend and a TypeScript backend, with twenty guided challenges across five levels.
+
+## Try it locally
+
+With Node.js 22.15 or newer installed:
+
+```sh
+npm ci
+npm run dev
+```
+
+Open **http://localhost:3000**, select **Start your journey**, then **Start local session**. On Windows, you can also run `Start-PromptLab.ps1`.
+
+Your work persists locally in `.data/promptlab`. Introductory grading, drafts, progress, saved prompts, search, and settings work without paid services. Model-dependent challenges require real Anthropic configuration; the app clearly explains when AI grading is unavailable. The local session shortcut is disabled in production.
+
+See [Deployment](docs/DEPLOYMENT.md) for optional AI configuration, production containers, HTTPS, and hosting choices. No server purchase is needed to test the app.
+
+## Frontend
+
+The clean, responsive workspace includes an overview dashboard, five-level roadmap, searchable challenge catalog, live challenge editor, draft autosave, grading feedback, submission history, weekly/all-time leaderboard, prompt library, notifications, account settings, and author/admin tools. Fonts are served locally. Desktop and mobile browser flows are covered by Playwright.
 
 Prompt Lab is a learning platform for programming and debugging. Learners investigate problems, consult library documentation, implement solutions, inspect failures and strengthen their tests. AI-assisted exercises teach learners to express precise requirements and evaluate the resulting code rather than accept an answer without evidence.
 
@@ -28,7 +49,7 @@ The original ten challenge identities remain available. Additional exercises ext
 
 ## Service configuration
 
-Use Node.js 22.12 or newer. Configure the environment variables documented in `.env.example` with the deployment's PostgreSQL, Redis, HTTPS origins, provider credentials and independently generated secrets. The API requires real service configuration; simulated providers and embedded databases are used only by automated tests.
+Use Node.js 22.15 or newer. Production requires the PostgreSQL, Redis, HTTPS origins, provider credentials and independently generated secrets documented in `.env.example`. The explicit local development entry point supports persistent embedded data and disabled AI; scripted providers remain restricted to automated tests.
 
 ```sh
 npm ci
@@ -58,6 +79,8 @@ The API includes authentication, profiles, levels, challenges, drafts, token cou
 ```sh
 npm run check
 npm run lint
+npx playwright install chromium
+npm run test:e2e
 ```
 
 The checks compile TypeScript, validate challenge definitions and exercise grading, authentication, ownership, idempotency, concurrency, progress, quotas and reference data. PostgreSQL and Redis service checks are configured in the integration workflow. External-provider validation is performed against the deployment's registered OAuth applications, transactional email domain and model account.
