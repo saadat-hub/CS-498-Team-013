@@ -1,0 +1,91 @@
+{
+  'slug': 'debug-data-leakage',
+  'level': 'iterate-and-debug',
+  'position': 3,
+  'published': true,
+  'title': 'Find and repair a leaking evaluation',
+  'brief': 'Diagnose the supplied preprocessing bug. Explain why the reported evaluation is optimistic, repair the workflow with a Pipeline, and write a regression test that catches fitting preprocessing on test data. Cite the scikit-learn guidance used.',
+  'hint': 'The issue is which rows influence fitted preprocessing, not whether transform can be called on test rows.',
+  'tags': ['machine-learning', 'python', 'research', 'testing', 'token-budget'],
+  'token_budget': 240,
+  'xp': 175,
+  'difficulty': 4,
+  'context':
+    {
+      'starter_code': "from sklearn.preprocessing import StandardScaler\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\n\nscaled = StandardScaler().fit_transform(X)\nX_train, X_test, y_train, y_test = train_test_split(scaled, y, random_state=42)\nmodel = LogisticRegression().fit(X_train, y_train)\nprint(model.score(X_test, y_test))\n",
+      'failure_evidence': 'Preprocessing statistics include observations later assigned to the holdout set. A shifted holdout changes the fitted scaling statistics.',
+      'track': 'machine-learning',
+      'submission_mode': 'code-and-research-notes',
+      'learning_objectives':
+        [
+          'Identifies fitting StandardScaler on the complete dataset before splitting as data leakage and explains its effect without asserting a fabricated score.',
+          'Splits raw X and y first, fits a scaler/classifier Pipeline on X_train only, and evaluates on X_test.',
+          'Includes a test using a shifted holdout or fitted mean assertion that would fail for the original implementation and cites official guidance.',
+        ],
+      'references':
+        [
+          {
+            'title': 'Primary library documentation',
+            'url': 'https://scikit-learn.org/stable/common_pitfalls.html',
+          },
+        ],
+      'evaluation_mode': 'static-and-model-review',
+      'instructions': 'Submit your implementation or an actionable implementation prompt, tests, and research notes. Reference the supplied evidence. Do not claim tests ran unless execution evidence is available.',
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Addresses leakage',
+        'config': { 'any': ['leakage'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Addresses pipeline',
+        'config': { 'any': ['pipeline'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Addresses train / training',
+        'config': { 'any': ['train', 'training'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-4',
+        'type': 'must_include',
+        'label': 'Addresses test / pytest',
+        'config': { 'any': ['test', 'pytest'], 'match': 'word' },
+      },
+      {
+        'key': 'solution-quality',
+        'type': 'llm_judge',
+        'label': 'Meets implementation, verification and research criteria',
+        'config':
+          {
+            'rubric': 'Evaluate the learner submission as a practical machine-learning engineering solution or a precise request for one. Assess technical correctness, test coverage and research evidence against the provided context. Keyword repetition alone is insufficient. Do not treat a claimed execution as verified; judge only supplied code and reasoning. An actionable prompt must specify the concrete requirements for every criterion.',
+            'passThreshold': 1,
+            'criteria':
+              [
+                {
+                  'id': 'diagnosis',
+                  'description': 'Identifies fitting StandardScaler on the complete dataset before splitting as data leakage and explains its effect without asserting a fabricated score.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'repair',
+                  'description': 'Splits raw X and y first, fits a scaler/classifier Pipeline on X_train only, and evaluates on X_test.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'regression',
+                  'description': 'Includes a test using a shifted holdout or fitted mean assertion that would fail for the original implementation and cites official guidance.',
+                  'weight': 1,
+                },
+              ],
+          },
+      },
+    ],
+}

@@ -1,0 +1,40 @@
+{
+  'slug': 'no-libraries',
+  'level': 'add-context-and-limits',
+  'position': 1,
+  'published': true,
+  'title': 'No libraries allowed',
+  'brief': 'Ask for a Python task list with add, list and delete commands using only the standard library.',
+  'hint': 'Ask for a Python task list with add, list and delete commands using only the standard library.',
+  'tags': ['token-budget', 'must-include'],
+  'token_budget': 60,
+  'xp': 75,
+  'difficulty': 2,
+  'context': {},
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Includes python',
+        'config': { 'any': ['python'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Includes standard library / stdlib / no external / no third-party / no libraries',
+        'config':
+          {
+            'any': ['standard library', 'stdlib', 'no external', 'no third-party', 'no libraries'],
+            'match': 'phrase',
+          },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Includes add / list / delete / remove / complete',
+        'config': { 'any': ['add', 'list', 'delete', 'remove', 'complete'], 'match': 'word' },
+      },
+    ],
+}

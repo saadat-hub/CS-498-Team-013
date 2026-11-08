@@ -1,0 +1,92 @@
+{
+  'slug': 'reproducible-training-cli',
+  'level': 'shape-the-output',
+  'position': 4,
+  'published': true,
+  'title': 'Build a reproducible training command',
+  'brief': 'Implement a Python CLI that trains a scikit-learn classifier on the built-in iris dataset. Accept --seed and --output, save a fitted model with joblib, and emit evaluation JSON. Keep model fitting separate from argument parsing and document the artifact-loading trust boundary.',
+  'hint': 'Use a fixed split and seeded estimator where applicable. Only load trusted serialized model artifacts.',
+  'tags': ['machine-learning', 'python', 'research', 'testing', 'token-budget'],
+  'token_budget': 240,
+  'xp': 150,
+  'difficulty': 3,
+  'context':
+    {
+      'command': 'python train.py --seed 42 --output artifacts/model.joblib',
+      'deliverables': ['train.py', 'requirements.txt', 'test_train.py', 'metrics.json'],
+      'acceptance_tests': "def test_repeatable_training(tmp_path):\n    first = train(seed=42, output=tmp_path / \"a.joblib\")\n    second = train(seed=42, output=tmp_path / \"b.joblib\")\n    assert first[\"accuracy\"] == second[\"accuracy\"]\n    assert (tmp_path / \"a.joblib\").is_file()\n",
+      'track': 'machine-learning',
+      'submission_mode': 'code-and-research-notes',
+      'learning_objectives':
+        [
+          'Provides argparse CLI, built-in iris loading, stratified train/test split, reproducible seed, joblib output and machine-readable evaluation.',
+          'Separates train() from CLI entry point and provides a deterministic repeat-run test using a temporary directory.',
+          'States that joblib/pickle artifacts must only be loaded from trusted sources and cites relevant official documentation.',
+        ],
+      'references':
+        [
+          {
+            'title': 'Primary library documentation',
+            'url': 'https://scikit-learn.org/stable/model_persistence.html',
+          },
+        ],
+      'evaluation_mode': 'static-and-model-review',
+      'instructions': 'Submit your implementation or an actionable implementation prompt, tests, and research notes. Reference the supplied evidence. Do not claim tests ran unless execution evidence is available.',
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Addresses seed / random_state',
+        'config': { 'any': ['seed', 'random_state'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Addresses joblib',
+        'config': { 'any': ['joblib'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Addresses json',
+        'config': { 'any': ['json'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-4',
+        'type': 'must_include',
+        'label': 'Addresses test / pytest',
+        'config': { 'any': ['test', 'pytest'], 'match': 'word' },
+      },
+      {
+        'key': 'solution-quality',
+        'type': 'llm_judge',
+        'label': 'Meets implementation, verification and research criteria',
+        'config':
+          {
+            'rubric': 'Evaluate the learner submission as a practical machine-learning engineering solution or a precise request for one. Assess technical correctness, test coverage and research evidence against the provided context. Keyword repetition alone is insufficient. Do not treat a claimed execution as verified; judge only supplied code and reasoning. An actionable prompt must specify the concrete requirements for every criterion.',
+            'passThreshold': 1,
+            'criteria':
+              [
+                {
+                  'id': 'cli',
+                  'description': 'Provides argparse CLI, built-in iris loading, stratified train/test split, reproducible seed, joblib output and machine-readable evaluation.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'testability',
+                  'description': 'Separates train() from CLI entry point and provides a deterministic repeat-run test using a temporary directory.',
+                  'weight': 1,
+                },
+                {
+                  'id': 'artifact_safety',
+                  'description': 'States that joblib/pickle artifacts must only be loaded from trusted sources and cites relevant official documentation.',
+                  'weight': 1,
+                },
+              ],
+          },
+      },
+    ],
+}
