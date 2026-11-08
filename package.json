@@ -1,0 +1,63 @@
+{
+  "name": "prompt-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "tsx watch apps/api/src/server.ts",
+    "worker": "node dist/apps/worker/src/index.js",
+    "start": "node dist/apps/api/src/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run tests/api.test.ts",
+    "db:migrate": "node dist/packages/db/src/cli.js migrate",
+    "db:seed": "node dist/packages/db/src/cli.js seed",
+    "content:sync": "node dist/packages/db/src/cli.js sync",
+    "content:validate": "node dist/packages/content/src/validate.js",
+    "check": "npm run typecheck && npm run build && npm test && npm run content:validate",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "test:postgres": "vitest run tests/postgres.test.ts",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "release": "node dist/packages/db/src/release.js",
+    "db:seed:demo": "node dist/packages/db/src/cli.js demo",
+    "test:e2e": "vitest run tests/api.test.ts tests/machine-learning.test.ts",
+    "test:services": "vitest run tests/postgres.test.ts tests/services.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@electric-sql/pglite": "^0.3.14",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^6.1.3",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.301.0",
+    "@opentelemetry/sdk-node": "^0.301.0",
+    "@sentry/node": "^11.11.0",
+    "ajv": "^8.17.1",
+    "bullmq": "^5.61.0",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.6.2",
+    "fastify-type-provider-zod": "^6.0.0",
+    "ioredis": "^5.8.2",
+    "pg": "^8.16.3",
+    "re2-wasm": "^1.0.2",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/pg": "^8.15.5",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

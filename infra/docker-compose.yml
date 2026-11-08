@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: promptlab
+      POSTGRES_PASSWORD: promptlab
+      POSTGRES_DB: promptlab
+    ports: ['127.0.0.1:5432:5432']
+    volumes: ['postgres_data:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U promptlab']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ['127.0.0.1:6379:6379']
+  mailpit:
+    image: axllent/mailpit
+    ports: ['127.0.0.1:8025:8025', '127.0.0.1:1025:1025']
+volumes:
+  postgres_data:

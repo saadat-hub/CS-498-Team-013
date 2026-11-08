@@ -1,0 +1,57 @@
+{
+  'slug': 'read-the-error',
+  'level': 'iterate-and-debug',
+  'position': 1,
+  'published': true,
+  'title': 'Read the error',
+  'brief': 'Ask for the root cause and fix for the TypeError in the supplied error log.',
+  'hint': 'Ask for the root cause and fix for the TypeError in the supplied error log.',
+  'tags': ['token-budget', 'must-include'],
+  'token_budget': 80,
+  'xp': 125,
+  'difficulty': 4,
+  'context':
+    {
+      'error_log': "TypeError: Cannot read properties of undefined (reading 'map')\nconst names = data.users.map(user => user.name);",
+    },
+  'run': null,
+  'checks':
+    [
+      {
+        'key': 'requirement-1',
+        'type': 'must_include',
+        'label': 'Includes typeerror / undefined',
+        'config': { 'any': ['typeerror', 'undefined'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-2',
+        'type': 'must_include',
+        'label': 'Includes fix',
+        'config': { 'any': ['fix'], 'match': 'word' },
+      },
+      {
+        'key': 'requirement-3',
+        'type': 'must_include',
+        'label': 'Includes why / cause / explain',
+        'config': { 'any': ['why', 'cause', 'explain'], 'match': 'word' },
+      },
+      {
+        'key': 'root-cause',
+        'type': 'llm_judge',
+        'label': 'Asks for the root cause',
+        'config':
+          {
+            'rubric': 'Does the prompt ask for the underlying cause of the error and a fix, rather than merely suppressing it?',
+            'passThreshold': 1,
+            'criteria':
+              [
+                {
+                  'id': 'root_cause',
+                  'description': 'Explicitly asks to explain the root cause of undefined data',
+                  'weight': 1,
+                },
+              ],
+          },
+      },
+    ],
+}

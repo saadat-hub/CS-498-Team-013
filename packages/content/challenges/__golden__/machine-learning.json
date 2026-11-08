@@ -1,0 +1,82 @@
+{
+  "numpy-feature-scaling": {
+    "pass": [
+      "numpy axis constant Python implementation with tests and official documentation. Implement standardize_features(X) in Python using NumPy. Return a new float array, handle constant columns without division by zero, reject non-finite inputs, and explain the array axis used. Consult NumPy documentation and cite the relevant page.",
+      "Implement: numpy axis constant Python implementation with tests and official documentation. Implement standardize_features(X) in Python using NumPy. Return a new float array, handle constant columns without division by zero, reject non-finite inputs, and explain the array axis used. Consult NumPy documentation and cite the relevant page.",
+      "Research and verify: numpy axis constant Python implementation with tests and official documentation. Implement standardize_features(X) in Python using NumPy. Return a new float array, handle constant columns without division by zero, reject non-finite inputs, and explain the array axis used. Consult NumPy documentation and cite the relevant page."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "classification-metrics": {
+    "pass": [
+      "precision recall f1 accuracy Python implementation with tests and official documentation. Compute precision, recall and F1 for the positive class using scikit-learn. Explain why accuracy hides poor performance for this dataset, specify zero_division behavior, and include a test that checks the numeric results. Cite the metric documentation.",
+      "Implement: precision recall f1 accuracy Python implementation with tests and official documentation. Compute precision, recall and F1 for the positive class using scikit-learn. Explain why accuracy hides poor performance for this dataset, specify zero_division behavior, and include a test that checks the numeric results. Cite the metric documentation.",
+      "Research and verify: precision recall f1 accuracy Python implementation with tests and official documentation. Compute precision, recall and F1 for the positive class using scikit-learn. Explain why accuracy hides poor performance for this dataset, specify zero_division behavior, and include a test that checks the numeric results. Cite the metric documentation."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "pandas-missing-data": {
+    "pass": [
+      "pandas missing target zero Python implementation with tests and official documentation. Write a pandas preparation function for the supplied CSV records. Convert age to numeric, distinguish missing values from valid zeros, reject rows missing the target, and return a cleaning report. Justify the missing-feature strategy and cite pandas documentation.",
+      "Implement: pandas missing target zero Python implementation with tests and official documentation. Write a pandas preparation function for the supplied CSV records. Convert age to numeric, distinguish missing values from valid zeros, reject rows missing the target, and return a cleaning report. Justify the missing-feature strategy and cite pandas documentation.",
+      "Research and verify: pandas missing target zero Python implementation with tests and official documentation. Write a pandas preparation function for the supplied CSV records. Convert age to numeric, distinguish missing values from valid zeros, reject rows missing the target, and return a cleaning report. Justify the missing-feature strategy and cite pandas documentation."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "research-sklearn-pipeline": {
+    "pass": [
+      "pipeline train fit documentation Python implementation with tests and official documentation. Use the scikit-learn documentation to build a Pipeline for numeric imputation, scaling and logistic regression. Split the data before fitting. Explain how Pipeline prevents leakage and show how to inspect the installed API rather than guessing an argument.",
+      "Implement: pipeline train fit documentation Python implementation with tests and official documentation. Use the scikit-learn documentation to build a Pipeline for numeric imputation, scaling and logistic regression. Split the data before fitting. Explain how Pipeline prevents leakage and show how to inspect the installed API rather than guessing an argument.",
+      "Research and verify: pipeline train fit documentation Python implementation with tests and official documentation. Use the scikit-learn documentation to build a Pipeline for numeric imputation, scaling and logistic regression. Split the data before fitting. Explain how Pipeline prevents leakage and show how to inspect the installed API rather than guessing an argument."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "model-card-json": {
+    "pass": [
+      "json precision recall limitations Python implementation with tests and official documentation. Create a JSON model-card report from the supplied results. Include dataset provenance, split method, evaluation metrics and limitations. Explain any conclusions using the supplied evidence; do not invent experiment results.",
+      "Implement: json precision recall limitations Python implementation with tests and official documentation. Create a JSON model-card report from the supplied results. Include dataset provenance, split method, evaluation metrics and limitations. Explain any conclusions using the supplied evidence; do not invent experiment results.",
+      "Research and verify: json precision recall limitations Python implementation with tests and official documentation. Create a JSON model-card report from the supplied results. Include dataset provenance, split method, evaluation metrics and limitations. Explain any conclusions using the supplied evidence; do not invent experiment results."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "reproducible-training-cli": {
+    "pass": [
+      "seed joblib json test Python implementation with tests and official documentation. Implement a Python CLI that trains a scikit-learn classifier on the built-in iris dataset. Accept --seed and --output, save a fitted model with joblib, and emit evaluation JSON. Keep model fitting separate from argument parsing and document the artifact-loading trust boundary.",
+      "Implement: seed joblib json test Python implementation with tests and official documentation. Implement a Python CLI that trains a scikit-learn classifier on the built-in iris dataset. Accept --seed and --output, save a fitted model with joblib, and emit evaluation JSON. Keep model fitting separate from argument parsing and document the artifact-loading trust boundary.",
+      "Research and verify: seed joblib json test Python implementation with tests and official documentation. Implement a Python CLI that trains a scikit-learn classifier on the built-in iris dataset. Accept --seed and --output, save a fitted model with joblib, and emit evaluation JSON. Keep model fitting separate from argument parsing and document the artifact-loading trust boundary."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "debug-data-leakage": {
+    "pass": [
+      "leakage pipeline train test Python implementation with tests and official documentation. Diagnose the supplied preprocessing bug. Explain why the reported evaluation is optimistic, repair the workflow with a Pipeline, and write a regression test that catches fitting preprocessing on test data. Cite the scikit-learn guidance used.",
+      "Implement: leakage pipeline train test Python implementation with tests and official documentation. Diagnose the supplied preprocessing bug. Explain why the reported evaluation is optimistic, repair the workflow with a Pipeline, and write a regression test that catches fitting preprocessing on test data. Cite the scikit-learn guidance used.",
+      "Research and verify: leakage pipeline train test Python implementation with tests and official documentation. Diagnose the supplied preprocessing bug. Explain why the reported evaluation is optimistic, repair the workflow with a Pipeline, and write a regression test that catches fitting preprocessing on test data. Cite the scikit-learn guidance used."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "repair-failing-ml-tests": {
+    "pass": [
+      "precision recall zero_division pytest Python implementation with tests and official documentation. Repair evaluate_predictions so all supplied pytest tests pass. Explain each failure, preserve the assertions, and add a regression case for mismatched lengths. Include a research note explaining the documented zero-division behavior.",
+      "Implement: precision recall zero_division pytest Python implementation with tests and official documentation. Repair evaluate_predictions so all supplied pytest tests pass. Explain each failure, preserve the assertions, and add a regression case for mismatched lengths. Include a research note explaining the documented zero-division behavior.",
+      "Research and verify: precision recall zero_division pytest Python implementation with tests and official documentation. Repair evaluate_predictions so all supplied pytest tests pass. Explain each failure, preserve the assertions, and add a regression case for mismatched lengths. Include a research note explaining the documented zero-division behavior."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "build-ml-inference-api": {
+    "pass": [
+      "fastapi predict test file Python implementation with tests and official documentation. Build a small Python FastAPI service that trains a scikit-learn Pipeline on iris and exposes POST /predict. Load a trusted model once, validate four finite numeric features, return a class and probabilities, and test valid and invalid requests. Provide dependencies, file structure and deployment commands.",
+      "Implement: fastapi predict test file Python implementation with tests and official documentation. Build a small Python FastAPI service that trains a scikit-learn Pipeline on iris and exposes POST /predict. Load a trusted model once, validate four finite numeric features, return a class and probabilities, and test valid and invalid requests. Provide dependencies, file structure and deployment commands.",
+      "Research and verify: fastapi predict test file Python implementation with tests and official documentation. Build a small Python FastAPI service that trains a scikit-learn Pipeline on iris and exposes POST /predict. Load a trusted model once, validate four finite numeric features, return a class and probabilities, and test valid and invalid requests. Provide dependencies, file structure and deployment commands."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  },
+  "research-model-comparison": {
+    "pass": [
+      "cross-validation holdout f1 test Python implementation with tests and official documentation. Build a small comparison application for logistic regression and a random forest using a built-in scikit-learn dataset. Use stratified cross-validation on training data, reserve a final holdout, report mean and variation of F1, and explain the final choice using evidence and cited documentation. Include tests for reproducibility and data isolation.",
+      "Implement: cross-validation holdout f1 test Python implementation with tests and official documentation. Build a small comparison application for logistic regression and a random forest using a built-in scikit-learn dataset. Use stratified cross-validation on training data, reserve a final holdout, report mean and variation of F1, and explain the final choice using evidence and cited documentation. Include tests for reproducibility and data isolation.",
+      "Research and verify: cross-validation holdout f1 test Python implementation with tests and official documentation. Build a small comparison application for logistic regression and a random forest using a built-in scikit-learn dataset. Use stratified cross-validation on training data, reserve a final holdout, report mean and variation of F1, and explain the final choice using evidence and cited documentation. Include tests for reproducibility and data isolation."
+    ],
+    "fail": ["Solve it.", "Write a Python hello world function.", "Please explain the project."]
+  }
+}
